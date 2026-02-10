@@ -1278,12 +1278,12 @@ const administrativeSentences = [
   { hebrew: "לפנות ימינה", arabic: "لف على اليمين", transcription: "לֶפּ עַל-יַמִין" },
   { hebrew: "הבית מרקחת למטה", arabic: "الصيدلية تحت", transcription: "אִל-סַיְדַלִיֶּה תַחְת" },
   { hebrew: "קח את המדרגות", arabic: "إنزل / إطلع الدرج", transcription: "אִנְזַל / אֻטְלֻע אִל-דַּרַג'" },
-  { hebrew: "המעלית לפניך", arabic: "الأسنسير قدامك", transcriptionJerusalem: "אִל-אַסַנְסֵיר אֻדַּאמַךּ", transcriptionGalilee: "אִל-אַסַנְסֵיר קֻדַּאמַךּ" },
+  { hebrew: "המעלית לפניך", arabic: "الأسنسير قدامك", transcription: "אִל-אַסַנְסֵיר אֻדַּאמַךּ" },
   { hebrew: "קומה ראשונה", arabic: "الطابق الأول", transcription: "אִל-טַּאבֶא אִל-אַוַּל" },
   { hebrew: "קומה שלישית", arabic: "الطابق الثالث", transcription: "אִל-טַּאבֶא אִל-תַּאלֶת'" },
   { hebrew: "קומת קרקע", arabic: "الطابق الأرضي", transcription: "אִל-טַּאבֶא אִל-אַרְד'ִי" },
   { hebrew: "לך עד סוף המסדרון ופנה ימינה", arabic: "روح لآخر الممر ولف على اليمين", transcription: "רוּח לְאַאחֶ'ר אִל-מַמַרּ וְלֶפּ עַל-יַמִין" },
-  { hebrew: "המחלקה בקומה השנייה", arabic: "القسم بالطابق التاني", transcriptionJerusalem: "אִל-אִסֶם בַּל-טַּאבֶא אִל-תַּאנִי", transcriptionGalilee: "אִל-קִסֶם בַּל-טַּאבֶא אִל-תַּאנִי" },
+  { hebrew: "המחלקה בקומה השנייה", arabic: "القسم بالطابق التاني", transcription: "אִל-אִסֶם בַּל-טַּאבֶא אִל-תַּאנִי" },
   { hebrew: "לך למזכירות בקומת קרקע", arabic: "روح عالسكرتاريا بالطابق الأرضي", transcription: "רוּח עַ-סֶּכְּרֶטַארְיַא בַּל-טַּאבֶא אִל-אַרְד'ִי" },
   { hebrew: "הכניסה מצד שמאל", arabic: "المدخل من جهة الشمال", transcription: "אִל-מַדְחַ'ל מִן ג'ִהֶת אִשְּׁמַאל" },
   { hebrew: "היציאה מאחורה", arabic: "المخرج من ورا", transcription: "אִל-מַחְ'רַג' מִן וַרַא" },
@@ -1291,7 +1291,7 @@ const administrativeSentences = [
   { hebrew: "יש לך פגישה היום?", arabic: "عندك موعد اليوم؟", transcription: "עִנְדַךּ מַוְעַד אִל-יוֹם?" },
   { hebrew: "הפגישה עם הפסיכיאטר בשעה 10", arabic: "الموعد مع الطبيب النفسي الساعة عشرة", transcription: "אִל-מַוְעַד מַע אִל-טַּבִּיבּ אִל-נַפְסִי אִל-סַּאעֶה עַשְׁרֶה" },
   { hebrew: "לך למזכירה בחדר הראשון", arabic: "روح للسكرتيرة بالغرفة الأولى", transcription: "רוּח לַ-סֶּכְּרֶטֵירֶה בַּל-עֻ'רְפֶה אִל-אוּלַא" },
-  { hebrew: "צריך הערכה לפני האבחון", arabic: "لازم تقييم قبل التشخيص", transcriptionJerusalem: "לַאזֶם תַאְיִים אַבְּל אִל-תַּשְׁחִ'יס", transcriptionGalilee: "לַאזֶם תַקְיִים קַבְּל אִל-תַּשְׁחִ'יס" },
+  { hebrew: "צריך הערכה לפני האבחון", arabic: "لازم تقييم قبل التشخيص", transcription: "לַאזֶם תַאְיִים אַבְּל אִל-תַּשְׁחִ'יס" },
   { hebrew: "תביא את האישור", arabic: "جيب الموافقة", transcription: "ג'ִיבּ אִל-מֻוַאפַאֶה" },
   { hebrew: "זה בחינם", arabic: "هادا ببلاش", transcription: "הַאדַא בְּבַלַאשׁ" },
   { hebrew: "זה בתשלום", arabic: "هادا بفلوس", transcription: "הַאדַא בְּפְלוּס" },
@@ -2315,7 +2315,7 @@ function ArabicVocabularyApp() {
   return administrativeSentences.filter(s =>
   s.hebrew.toLowerCase().includes(term) ||
   s.arabic.includes(searchTerm) ||
-  removeNikkud(s.transcription.toLowerCase()).includes(termClean)
+  removeNikkud((s.transcription || '').toLowerCase()).includes(termClean)
   );
   }, [searchTerm]);
 
@@ -2616,7 +2616,7 @@ function ArabicVocabularyApp() {
   <div style={{ color: '#4ade80', fontSize: `${fontSize}px`, marginBottom: '8px' }}>{sentence.hebrew}</div>
   <div style={{ color: '#fbbf24', fontSize: `${fontSize + 1}px`, fontFamily: "'Noto Sans Arabic', Arial", direction: 'rtl', marginBottom: '8px' }}>{sentence.arabic}</div>
   <div style={{ background: 'rgba(233, 69, 96, 0.15)', padding: '8px 12px', borderRadius: '8px', color: '#f0f0f0', fontSize: `${fontSize - 1}px` }}>
-  {sentence.transcription}
+  {sentence.transcription || sentence.transcriptionJerusalem || ''}
   </div>
   </div>
   ))}
