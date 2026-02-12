@@ -36,6 +36,106 @@
   <script type="text/babel" data-presets="react,es2015">
 const { useState, useMemo } = React;
 
+// --- Audio Configuration ---
+// Set this to the base path where audio files are hosted.
+// For GitHub Pages: './audio' or 'https://YOUR_USERNAME.github.io/YOUR_REPO/audio'
+// For local testing: './audio'
+const AUDIO_BASE_PATH = './audio';
+
+// MD5 hash (simplified) to match Python script's file naming
+function textToId(text) {
+  // Simple hash matching Python's hashlib.md5().hexdigest()[:12]
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) {
+    const chr = text.charCodeAt(i);
+    hash = ((hash << 5) - hash) + chr;
+    hash |= 0;
+  }
+  // We use a lookup table approach instead - load manifest.json
+  return null;
+}
+
+// Audio manifest - loaded from generated manifest.json
+let audioManifest = {};
+fetch(AUDIO_BASE_PATH + '/manifest.json')
+  .then(r => r.ok ? r.json() : {})
+  .then(data => { audioManifest = data; })
+  .catch(() => { /* Audio not available yet */ });
+
+// Find audio filename for a given Arabic text
+function getAudioFile(arabicText) {
+  for (const [id, entry] of Object.entries(audioManifest)) {
+    if (entry.arabic === arabicText) {
+      return AUDIO_BASE_PATH + '/' + entry.filename;
+    }
+  }
+  return null;
+}
+
+// Play audio for Arabic text
+let currentAudio = null;
+function playArabicAudio(arabicText) {
+  const audioFile = getAudioFile(arabicText);
+  if (!audioFile) return;
+
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+  }
+  currentAudio = new Audio(audioFile);
+  currentAudio.play().catch(() => {});
+}
+
+// Play button component
+function PlayButton({ arabicText, size = 28 }) {
+  const [isPlaying, setIsPlaying] = React.useState(false);
+  const [hasAudio, setHasAudio] = React.useState(false);
+
+  React.useEffect(() => {
+    const check = () => setHasAudio(!!getAudioFile(arabicText));
+    check();
+    const interval = setInterval(check, 2000);
+    return () => clearInterval(interval);
+  }, [arabicText]);
+
+  if (!hasAudio) return null;
+
+  const handlePlay = (e) => {
+    e.stopPropagation();
+    setIsPlaying(true);
+    const audioFile = getAudioFile(arabicText);
+    if (!audioFile) return;
+
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+    }
+    currentAudio = new Audio(audioFile);
+    currentAudio.onended = () => setIsPlaying(false);
+    currentAudio.onerror = () => setIsPlaying(false);
+    currentAudio.play().catch(() => setIsPlaying(false));
+  };
+
+  return React.createElement('button', {
+    onClick: handlePlay,
+    title: 'השמע בערבית',
+    style: {
+      background: isPlaying ? 'rgba(233, 69, 96, 0.4)' : 'rgba(233, 69, 96, 0.2)',
+      border: '1px solid rgba(233, 69, 96, 0.4)',
+      borderRadius: '50%',
+      width: size + 'px',
+      height: size + 'px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      cursor: 'pointer',
+      fontSize: (size * 0.5) + 'px',
+      transition: 'all 0.2s ease',
+      flexShrink: 0,
+    }
+  }, isPlaying ? '⏸' : '🔊');
+}
+
 const vocabularyData = {
   basics: {
   title: "יסודות השיח וכינויי גוף",
@@ -2261,7 +2361,16 @@ function ArabicVocabularyApp() {
   } else if (selectedDialect === 'galilee' && word.transcriptionGalilee) {
   return word.transcriptionGalilee;
   }
-  return word.transcription || word.transcriptionJerusalem || '';
+  if (word.transcription) return word.transcription;
+  if (word.transcriptionJerusalem) return word.transcriptionJerusalem;
+  // Fallback: build from masculine/feminine fields
+  if (word.masculine || word.feminine) {
+  let parts = [];
+  if (word.masculine) parts.push('ז: ' + word.masculine);
+  if (word.feminine) parts.push('נ: ' + word.feminine);
+  return parts.join(' | ');
+  }
+  return '';
   };
 
   // ALL HOOKS MUST BE BEFORE ANY CONDITIONAL RETURNS
@@ -2286,11 +2395,16 @@ function ArabicVocabularyApp() {
   } else if (selectedDialect === 'galilee' && word.transcriptionGalilee) {
   transcription = word.transcriptionGalilee;
   }
+  // Also search in masculine/feminine fields
+  const masc = word.masculine || '';
+  const fem = word.feminine || '';
   // Use removeNikkud for comparison to allow searching without vowel points
   const termClean = removeNikkud(term);
   return (word.hebrew || '').toLowerCase().includes(term) ||
   (word.arabic || '').includes(searchTerm) ||
-  removeNikkud(transcription.toLowerCase()).includes(termClean);
+  removeNikkud(transcription.toLowerCase()).includes(termClean) ||
+  removeNikkud(masc.toLowerCase()).includes(termClean) ||
+  removeNikkud(fem.toLowerCase()).includes(termClean);
   });
   }
 
@@ -2361,6 +2475,9 @@ function ArabicVocabularyApp() {
   </h1>
   <p style={{ color: '#94a3b8', fontSize: '1.1rem' }}>
   | האפליקציה נולדה לשמש אנשי רפואה ופרא-רפואה | ייתכנו אי-דיוקים
+  </p>
+  <p style={{ color: '#e879a0', fontSize: '0.85rem', marginTop: '6px' }}>
+  🔊 ההשמעה הקולית מבוססת על טכנולוגיית Text-to-Speech וייתכנו אי-דיוקים בהגייה
   </p>
   <p style={{ color: '#fbbf24', fontSize: '0.95rem', marginTop: '8px' }}>
   להערות ניתן ליצור איתי קשר: Evyatarr121@gmail.com | 0546200525 | אביתר
@@ -2540,9 +2657,12 @@ function ArabicVocabularyApp() {
   >
   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
   <span style={{ color: '#4ade80', fontSize: `${fontSize}px`, fontWeight: 'bold' }}>{word.hebrew}</span>
+  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+  <PlayButton arabicText={word.arabic} size={28} />
   <span style={{ background: 'rgba(255,255,255,0.1)', padding: '3px 8px', borderRadius: '6px', fontSize: '12px', color: '#94a3b8' }}>
   {vocabularyData[word.category] && vocabularyData[word.category].icon}
   </span>
+  </div>
   </div>
   <div style={{ color: '#fbbf24', fontSize: `${fontSize + 2}px`, fontFamily: "'Noto Sans Arabic', Arial", direction: 'rtl', marginBottom: '8px' }}>
   {word.arabic}
@@ -2613,7 +2733,10 @@ function ArabicVocabularyApp() {
   padding: '14px',
   border: '1px solid rgba(255,255,255,0.1)'
   }}>
-  <div style={{ color: '#4ade80', fontSize: `${fontSize}px`, marginBottom: '8px' }}>{sentence.hebrew}</div>
+  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+  <div style={{ color: '#4ade80', fontSize: `${fontSize}px` }}>{sentence.hebrew}</div>
+  <PlayButton arabicText={sentence.arabic} size={26} />
+  </div>
   <div style={{ color: '#fbbf24', fontSize: `${fontSize + 1}px`, fontFamily: "'Noto Sans Arabic', Arial", direction: 'rtl', marginBottom: '8px' }}>{sentence.arabic}</div>
   <div style={{ background: 'rgba(233, 69, 96, 0.15)', padding: '8px 12px', borderRadius: '8px', color: '#f0f0f0', fontSize: `${fontSize - 1}px` }}>
   {sentence.transcription || sentence.transcriptionJerusalem || ''}
